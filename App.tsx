@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { fetchDogePrice, fetchDogeChart } from './services/cryptoService';
 import { analyzeMarket } from './services/geminiService';
@@ -275,6 +276,7 @@ const App: React.FC = () => {
              <AiInsight 
                 analysis={analysis} 
                 loading={loadingAi} 
+                currentPrice={dogeData?.usd}
                 onRefresh={() => handleAiAnalysis(dogeData, chartData)} 
              />
           </div>

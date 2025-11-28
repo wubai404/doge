@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { DogePriceData, ChartPoint, MarketAnalysis } from "../types";
 
@@ -37,7 +38,10 @@ export const analyzeMarket = async (
 
     Provide a structured analysis including sentiment, a concise summary of the volatility, and potential support/resistance levels.
     
-    IMPORTANT: Write the 'summary', 'supportLevel', and 'resistanceLevel' in Simplified Chinese (简体中文).
+    IMPORTANT: 
+    1. Write the 'summary', 'supportLevel', and 'resistanceLevel' (text description) in Simplified Chinese (简体中文).
+    2. Provide 'supportPrice' and 'resistancePrice' as pure NUMBERS (USD) for charting.
+    
     Keep the tone professional but slightly aware of Dogecoin's meme culture (fun but insightful).
   `;
 
@@ -61,11 +65,19 @@ export const analyzeMarket = async (
             },
             supportLevel: {
               type: Type.STRING,
-              description: "Estimated support price level in Chinese."
+              description: "Text description of support level in Chinese (e.g., '0.15美元 强支撑')."
             },
             resistanceLevel: {
               type: Type.STRING,
-              description: "Estimated resistance price level in Chinese."
+              description: "Text description of resistance level in Chinese."
+            },
+            supportPrice: {
+              type: Type.NUMBER,
+              description: "The estimated numeric support price in USD (e.g., 0.15)."
+            },
+            resistancePrice: {
+              type: Type.NUMBER,
+              description: "The estimated numeric resistance price in USD (e.g., 0.18)."
             }
           },
           required: ["sentiment", "summary"]

@@ -1,3 +1,4 @@
+
 export interface DogePriceData {
   usd: number;
   usd_24h_vol: number;
@@ -16,6 +17,8 @@ export interface MarketAnalysis {
   summary: string;
   supportLevel?: string;
   resistanceLevel?: string;
+  supportPrice?: number;
+  resistancePrice?: number;
 }
 
 export enum TimeRange {

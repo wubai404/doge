@@ -1,14 +1,16 @@
+
 import React from 'react';
 import { MarketAnalysis } from '../types';
-import { Bot, TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react';
+import { Bot, TrendingUp, TrendingDown, Minus, Activity, Target } from 'lucide-react';
 
 interface AiInsightProps {
   analysis: MarketAnalysis | null;
   loading: boolean;
+  currentPrice?: number;
   onRefresh: () => void;
 }
 
-const AiInsight: React.FC<AiInsightProps> = ({ analysis, loading, onRefresh }) => {
+const AiInsight: React.FC<AiInsightProps> = ({ analysis, loading, currentPrice, onRefresh }) => {
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
       case 'Bullish': return 'text-green-400 border-green-400/30 bg-green-400/10';
@@ -35,6 +37,84 @@ const AiInsight: React.FC<AiInsightProps> = ({ analysis, loading, onRefresh }) =
       case 'Neutral': return '中性';
       default: return sentiment;
     }
+  };
+
+  // Helper to render the support/resistance visualization
+  const renderRangeChart = () => {
+    if (!analysis || !analysis.supportPrice || !analysis.resistancePrice || !currentPrice) {
+      return null;
+    }
+
+    const { supportPrice, resistancePrice } = analysis;
+    const padding = (resistancePrice - supportPrice) * 0.2;
+    const minVal = Math.min(supportPrice, currentPrice) - padding;
+    const maxVal = Math.max(resistancePrice, currentPrice) + padding;
+    const range = maxVal - minVal;
+
+    const getPos = (val: number) => ((val - minVal) / range) * 100;
+
+    const supportPos = getPos(supportPrice);
+    const resistancePos = getPos(resistancePrice);
+    const currentPos = getPos(currentPrice);
+
+    return (
+      <div className="mt-4 pt-4 border-t border-slate-700">
+        <div className="flex justify-between items-end mb-2">
+            <h4 className="text-xs font-semibold text-slate-400 flex items-center gap-1">
+                <Target size={12} />
+                交易区间预测 (USD)
+            </h4>
+        </div>
+        
+        {/* Chart Container */}
+        <div className="relative h-12 w-full mt-2 select-none">
+            {/* Base Line */}
+            <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-700 rounded-full transform -translate-y-1/2"></div>
+            
+            {/* Active Range Bar (Support to Resistance) */}
+            <div 
+                className="absolute top-1/2 h-1 bg-slate-500/50 rounded-full transform -translate-y-1/2"
+                style={{ left: `${supportPos}%`, width: `${resistancePos - supportPos}%` }}
+            ></div>
+
+            {/* Support Marker */}
+            <div 
+                className="absolute top-1/2 w-1 h-3 bg-green-500 rounded-sm transform -translate-y-1/2 -translate-x-1/2 transition-all duration-500"
+                style={{ left: `${supportPos}%` }}
+            ></div>
+            <div 
+                className="absolute top-full mt-1 text-[10px] text-green-400 transform -translate-x-1/2 font-mono"
+                style={{ left: `${supportPos}%` }}
+            >
+                {supportPrice.toFixed(3)}
+            </div>
+            
+            {/* Resistance Marker */}
+            <div 
+                className="absolute top-1/2 w-1 h-3 bg-red-500 rounded-sm transform -translate-y-1/2 -translate-x-1/2 transition-all duration-500"
+                style={{ left: `${resistancePos}%` }}
+            ></div>
+            <div 
+                className="absolute top-full mt-1 text-[10px] text-red-400 transform -translate-x-1/2 font-mono"
+                style={{ left: `${resistancePos}%` }}
+            >
+                {resistancePrice.toFixed(3)}
+            </div>
+
+            {/* Current Price Marker */}
+            <div 
+                className="absolute top-1/2 w-3 h-3 bg-doge-400 rounded-full border-2 border-slate-800 shadow-lg transform -translate-y-1/2 -translate-x-1/2 z-10 transition-all duration-1000 ease-out"
+                style={{ left: `${currentPos}%` }}
+            ></div>
+            <div 
+                className="absolute bottom-full mb-1 text-[10px] font-bold text-doge-400 transform -translate-x-1/2 font-mono"
+                style={{ left: `${currentPos}%` }}
+            >
+                当前
+            </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -68,14 +148,23 @@ const AiInsight: React.FC<AiInsightProps> = ({ analysis, loading, onRefresh }) =
         </div>
       ) : analysis ? (
         <div className="relative z-10 space-y-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <div className={`px-4 py-2 rounded-lg border flex items-center gap-2 font-bold ${getSentimentColor(analysis.sentiment)}`}>
               {getSentimentIcon(analysis.sentiment)}
               {getSentimentLabel(analysis.sentiment)}
             </div>
-            
-            {(analysis.supportLevel || analysis.resistanceLevel) && (
-              <div className="flex gap-4 text-sm text-slate-400">
+          </div>
+
+          <p className="text-slate-300 leading-relaxed border-l-2 border-slate-600 pl-4 italic text-sm">
+            "{analysis.summary}"
+          </p>
+          
+          {/* Render the chart if numeric data is available, otherwise fallback to text */}
+          {analysis.supportPrice && analysis.resistancePrice ? (
+             renderRangeChart()
+          ) : (
+            (analysis.supportLevel || analysis.resistanceLevel) && (
+              <div className="flex gap-4 text-sm text-slate-400 mt-2">
                 {analysis.supportLevel && (
                     <div className="flex flex-col">
                         <span className="text-[10px] uppercase tracking-wider">支撑位</span>
@@ -89,12 +178,8 @@ const AiInsight: React.FC<AiInsightProps> = ({ analysis, loading, onRefresh }) =
                     </div>
                 )}
               </div>
-            )}
-          </div>
-
-          <p className="text-slate-300 leading-relaxed border-l-2 border-slate-600 pl-4 italic">
-            "{analysis.summary}"
-          </p>
+            )
+          )}
         </div>
       ) : (
         <div className="text-center py-6 text-slate-500">
